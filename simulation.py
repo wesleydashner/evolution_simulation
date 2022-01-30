@@ -26,6 +26,13 @@ class Simulation:
             self.check_if_present()
             self.spawn_food(0.0005)
 
+    def get_entity_type_count(self, entity_type: type):
+        count = 0
+        for entity in self.entities:
+            if isinstance(entity, entity_type):
+                count += 1
+        return count
+
     def kill_entity(self, entity: Entity, x: int, y: int):
         self.habitat[y][x].remove(entity)
         self.entities.remove(entity)
@@ -99,10 +106,10 @@ class Simulation:
         self.spawn_entities(0.01, self.get_organism)
 
     def spawn_entities(self, spawn_probability: float, get_entity_method) -> None:
-        actual_spawn_probability = self.get_actual_spawn_probability(spawn_probability)
+        adjusted_spawn_probability = self.get_adjusted_spawn_probability(spawn_probability)
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):
-                if self.habitat[y][x] == [] and random() < actual_spawn_probability:
+                if self.habitat[y][x] == [] and random() < adjusted_spawn_probability:
                     new_entity = get_entity_method(x, y)
                     self.habitat[y][x].append(new_entity)
                     self.entities.append(new_entity)
@@ -111,7 +118,7 @@ class Simulation:
     # spaces, and 2 of these contain organisms, and we want food to have a 0.5 spawn probability then the actual
     # spawn probability needs to be 1. NOTE: this method assumes that each entity occupies exactly one space and that
     # two entities cannot occupy the same space
-    def get_actual_spawn_probability(self, spawn_probability: float):
+    def get_adjusted_spawn_probability(self, spawn_probability: float):
         entity_count = len(self.entities)
         total_spaces = self.habitat_width ** 2
         spaces_available = total_spaces - entity_count
