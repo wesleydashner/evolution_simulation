@@ -24,3 +24,9 @@ class Organism(Entity):
     def is_present(self) -> bool:
         self.food_count -= 0.1
         return self.food_count > 0
+
+    def should_reproduce(self) -> bool:
+        if self.food_count > 15:
+            self.food_count = 5
+            return True
+        return False

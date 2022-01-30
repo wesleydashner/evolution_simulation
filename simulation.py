@@ -1,4 +1,4 @@
-from random import random, shuffle
+from random import random, shuffle, choice
 from typing import List, Tuple
 from itertools import combinations
 
@@ -11,10 +11,10 @@ from entity import Entity
 
 class Simulation:
     def __init__(self) -> None:
-        self.habitat_width: int = 100
+        self.habitat_width: int = 200
         self.entities: List[Entity] = []
         self.habitat: List[List[List[Entity]]] = self.get_empty_habitat()
-        self.renderer: Renderer = Renderer(10, self.habitat_width)
+        self.renderer: Renderer = Renderer(6, self.habitat_width)
         self.spawn_organisms()
         self.spawn_food()
 
@@ -25,6 +25,8 @@ class Simulation:
             self.do_collisions()
             self.check_if_present()
             self.spawn_food(0.0005)
+            self.do_reproductions()
+            print(self.get_entity_type_count(Organism))
 
     def get_entity_type_count(self, entity_type: type):
         count = 0
@@ -50,6 +52,18 @@ class Simulation:
                 if len(self.habitat[y][x]) > 1:
                     for pair in combinations(self.habitat[y][x], 2):
                         self.do_collision(pair[0], pair[1], x, y)
+
+    def do_reproductions(self):
+        for entity in self.entities:
+            if isinstance(entity, Organism):
+                if entity.should_reproduce():
+                    possible_directions = self.get_possible_directions(entity)
+                    if possible_directions != []:
+                        delta_x, delta_y = choice(possible_directions).value
+                        x = entity.x + delta_x
+                        y = entity.y + delta_y
+                        new_organism = self.get_organism(x, y)
+                        self.spawn_entity(new_organism, x, y)
 
     def check_if_present(self):
         for y in range(self.habitat_width):
@@ -105,14 +119,17 @@ class Simulation:
     def spawn_organisms(self) -> None:
         self.spawn_entities(0.01, self.get_organism)
 
+    def spawn_entity(self, entity: Entity, x: int, y: int) -> None:
+        self.habitat[y][x].append(entity)
+        self.entities.append(entity)
+
     def spawn_entities(self, spawn_probability: float, get_entity_method) -> None:
         adjusted_spawn_probability = self.get_adjusted_spawn_probability(spawn_probability)
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):
                 if self.habitat[y][x] == [] and random() < adjusted_spawn_probability:
                     new_entity = get_entity_method(x, y)
-                    self.habitat[y][x].append(new_entity)
-                    self.entities.append(new_entity)
+                    self.spawn_entity(new_entity, x, y)
 
     # this method adjusts spawn probability based on how many entities there already. for example, if there are 4
     # spaces, and 2 of these contain organisms, and we want food to have a 0.5 spawn probability then the actual
