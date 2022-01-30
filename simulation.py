@@ -7,20 +7,19 @@ from direction import Direction
 
 
 class Simulation:
-    def __init__(self):
+    def __init__(self) -> None:
         self.habitat_width: int = 200
         self.organisms: List[Organism] = []
         self.habitat: List[List[Optional[Organism]]] = self.get_empty_habitat()
         self.renderer: Renderer = Renderer(5, self.habitat_width)
         self.spawn_organisms()
 
-    def run(self):
+    def run(self) -> None:
         while True:
             self.renderer.render(self.get_board_for_renderer())
             self.move_organisms()
-            print(len(self.organisms))
 
-    def move_organism(self, organism: Organism, direction: Direction):
+    def move_organism(self, organism: Organism, direction: Direction) -> None:
         if direction is not None:
             self.habitat[organism.y][organism.x] = None
             delta_x, delta_y = direction.value
@@ -28,14 +27,14 @@ class Simulation:
             organism.y += delta_y
             self.habitat[organism.y][organism.x] = organism
 
-    def move_organisms(self):
+    def move_organisms(self) -> None:
         # shuffle organisms, so first organisms don't always have an advantage of getting a desirable spot
         shuffle(self.organisms)
         for organism in self.organisms:
-            move = organism.get_random_move(self.get_possible_directions(organism))
+            move = organism.get_move(self.get_possible_directions(organism))
             self.move_organism(organism, move)
 
-    def get_possible_directions(self, organism: Organism):
+    def get_possible_directions(self, organism: Organism) -> List[Direction]:
         possible_directions = []
         for direction in Direction:
             delta_x, delta_y = direction.value
@@ -43,16 +42,16 @@ class Simulation:
                 possible_directions.append(direction)
         return possible_directions
 
-    def is_empty(self, x, y):
+    def is_empty(self, x, y) -> bool:
         return 0 <= x < self.habitat_width and 0 <= y < self.habitat_width and self.habitat[y][x] is None
 
-    def get_empty_habitat(self):
+    def get_empty_habitat(self) -> List[List[None]]:
         return [[None for _ in range(self.habitat_width)] for _ in range(self.habitat_width)]
 
-    def get_organism(self, x: int, y: int):
+    def get_organism(self, x: int, y: int) -> Organism:
         return Organism(x, y)
 
-    def spawn_organisms(self, spawn_probability: float = 0.01):
+    def spawn_organisms(self, spawn_probability: float = 0.01) -> None:
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):
                 if random() < spawn_probability:
@@ -60,7 +59,7 @@ class Simulation:
                     self.habitat[y][x] = new_organism
                     self.organisms.append(new_organism)
 
-    def get_board_for_renderer(self, default_color: Tuple[int, int, int] = (0, 0, 0)):
+    def get_board_for_renderer(self, default_color: Tuple[int, int, int] = (0, 0, 0)) -> List[List[Tuple[int, int, int]]]:
         board = [[default_color for _ in range(self.habitat_width)] for _ in range(self.habitat_width)]
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):

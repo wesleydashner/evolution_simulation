@@ -1,8 +1,8 @@
 from simulation import Simulation
 
 
-def main():
-    s = Simulation()
+def main() -> None:
+    s: Simulation = Simulation()
     s.run()
 
 
