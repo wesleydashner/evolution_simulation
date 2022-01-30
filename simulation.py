@@ -1,5 +1,5 @@
 from random import random, shuffle
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 from itertools import combinations
 
 from renderer import Renderer
@@ -15,8 +15,6 @@ class Simulation:
         self.entities: List[Entity] = []
         self.habitat: List[List[List[Entity]]] = self.get_empty_habitat()
         self.renderer: Renderer = Renderer(10, self.habitat_width)
-        # TODO: there's a bug with spawning because food only has spawn probability
-        # TODO: for each space not already occupied by an organism
         self.spawn_organisms()
         self.spawn_food()
 
@@ -26,6 +24,7 @@ class Simulation:
             self.move_organisms()
             self.do_collisions()
             self.check_if_present()
+            self.spawn_food(0.0005)
 
     def kill_entity(self, entity: Entity, x: int, y: int):
         self.habitat[y][x].remove(entity)
@@ -72,19 +71,17 @@ class Simulation:
         possible_directions = []
         for direction in Direction:
             delta_x, delta_y = direction.value
-            if self.is_valid_space(organism.x + delta_x, organism.y + delta_y):
+            if self.is_valid_space(organism.x + delta_x, organism.y + delta_y, organism):
                 possible_directions.append(direction)
         return possible_directions
 
-    def is_valid_space(self, x, y) -> bool:
-        # TODO: use mask id's here
-        return 0 <= x < self.habitat_width and 0 <= y < self.habitat_width and not self.space_has_organism(x, y)
-
-    def space_has_organism(self, x, y) -> bool:
+    def is_valid_space(self, x: int, y: int, organism: Organism) -> bool:
+        if not 0 <= x < self.habitat_width or not 0 <= y < self.habitat_width:
+            return False
         for entity in self.habitat[y][x]:
-            if isinstance(entity, Organism):
-                return True
-        return False
+            if entity.mask_id == organism.mask_id:
+                return False
+        return True
 
     def get_empty_habitat(self) -> List[List[List]]:
         return [[[] for _ in range(self.habitat_width)] for _ in range(self.habitat_width)]
@@ -95,28 +92,38 @@ class Simulation:
     def get_food(self, x: int, y: int) -> Food:
         return Food(x, y)
 
-    def spawn_food(self) -> None:
-        self.spawn_entities(0.5, self.get_food)
+    def spawn_food(self, spawn_probability: float = 0.5) -> None:
+        self.spawn_entities(spawn_probability, self.get_food)
 
     def spawn_organisms(self) -> None:
         self.spawn_entities(0.01, self.get_organism)
 
     def spawn_entities(self, spawn_probability: float, get_entity_method) -> None:
+        actual_spawn_probability = self.get_actual_spawn_probability(spawn_probability)
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):
-                if self.habitat[y][x] == [] and random() < spawn_probability:
+                if self.habitat[y][x] == [] and random() < actual_spawn_probability:
                     new_entity = get_entity_method(x, y)
                     self.habitat[y][x].append(new_entity)
                     self.entities.append(new_entity)
+
+    # this method adjusts spawn probability based on how many entities there already. for example, if there are 4
+    # spaces, and 2 of these contain organisms, and we want food to have a 0.5 spawn probability then the actual
+    # spawn probability needs to be 1. NOTE: this method assumes that each entity occupies exactly one space and that
+    # two entities cannot occupy the same space
+    def get_actual_spawn_probability(self, spawn_probability: float):
+        entity_count = len(self.entities)
+        total_spaces = self.habitat_width ** 2
+        spaces_available = total_spaces - entity_count
+        if spaces_available == 0:
+            return 0
+        ratio = total_spaces / spaces_available
+        return min(spawn_probability * ratio, 1)
 
     def get_board_for_renderer(self, default_color: Tuple[int, int, int] = (0, 0, 0)) -> List[List[Tuple[int, int, int]]]:
         board = [[default_color for _ in range(self.habitat_width)] for _ in range(self.habitat_width)]
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):
                 if self.habitat[y][x] != []:
-                    # TODO: mask id's act as z-position
-                    if len(self.habitat[y][x]) > 1:
-                        board[y][x] = (255, 255, 255)
-                    else:
-                        board[y][x] = self.habitat[y][x][0].color
+                    board[y][x] = max(self.habitat[y][x], key=lambda e: e.mask_id).color
         return board
