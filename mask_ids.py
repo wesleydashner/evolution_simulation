@@ -1,2 +1,0 @@
-ORGANISM_ID = 1
-FOOD_ID = 0

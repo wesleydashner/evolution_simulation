@@ -1,9 +1,11 @@
 from random import random, shuffle, choice
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from itertools import combinations
 
+from organisms.sight_organism import SightOrganism
+from organisms.straight_organism import StraightOrganism
 from renderer import Renderer
-from organism import Organism
+from organisms.random_organism import RandomOrganism
 from direction import Direction
 from food import Food
 from entity import Entity
@@ -12,6 +14,7 @@ from entity import Entity
 class Simulation:
     def __init__(self) -> None:
         self.habitat_width: int = 200
+        self.organism_types: List[type] = [SightOrganism, RandomOrganism, StraightOrganism]
         self.entities: List[Entity] = []
         self.habitat: List[List[List[Entity]]] = self.get_empty_habitat()
         self.renderer: Renderer = Renderer(6, self.habitat_width)
@@ -26,7 +29,12 @@ class Simulation:
             self.check_if_present()
             self.spawn_food(0.0005)
             self.do_reproductions()
-            print(self.get_entity_type_count(Organism))
+            self.print_organism_counts()
+
+    def print_organism_counts(self):
+        for o_type in self.organism_types:
+            print(f'{o_type.__name__}: {self.get_entity_type_count(o_type)}')
+        print()
 
     def get_entity_type_count(self, entity_type: type):
         count = 0
@@ -55,14 +63,14 @@ class Simulation:
 
     def do_reproductions(self):
         for entity in self.entities:
-            if isinstance(entity, Organism):
+            if self.is_organism(entity):
                 if entity.should_reproduce():
                     possible_directions = self.get_possible_directions(entity)
                     if possible_directions != []:
                         delta_x, delta_y = choice(possible_directions).value
                         x = entity.x + delta_x
                         y = entity.y + delta_y
-                        new_organism = self.get_organism(x, y)
+                        new_organism = type(entity)(x, y)
                         self.spawn_entity(new_organism, x, y)
 
     def check_if_present(self):
@@ -72,7 +80,7 @@ class Simulation:
                     if not entity.is_present():
                         self.kill_entity(entity, x, y)
 
-    def move_organism(self, organism: Organism, direction: Direction) -> None:
+    def move_organism(self, organism: RandomOrganism, direction: Direction) -> None:
         if direction is not None:
             self.habitat[organism.y][organism.x].remove(organism)
             delta_x, delta_y = direction.value
@@ -84,11 +92,32 @@ class Simulation:
         # shuffle organisms, so first organisms don't always have an advantage of getting a desirable spot
         shuffle(self.entities)
         for entity in self.entities:
-            if isinstance(entity, Organism):
-                move = entity.get_move(self.get_possible_directions(entity))
+            if self.is_organism(entity):
+                move = entity.get_move(self.get_possible_directions(entity), self.get_sight(entity))
                 self.move_organism(entity, move)
 
-    def get_possible_directions(self, organism: Organism) -> List[Direction]:
+    def get_sight(self, entity: Entity) -> Dict[Direction, list]:
+        return_dict = {}
+        for direction in Direction:
+            return_dict[direction] = self.get_sight_in_direction(entity, direction)
+        return return_dict
+
+    def get_sight_in_direction(self, entity: Entity, direction: Direction) -> list:
+        count = 0
+        x = entity.x
+        y = entity.y
+        while True:
+            count += 1
+            delta_x, delta_y = direction.value
+            x += delta_x
+            y += delta_y
+            if not 0 <= x < self.habitat_width or not 0 <= y < self.habitat_width:
+                return [count, None]
+            if self.habitat[y][x] != []:
+                return [count, [type(entity) for entity in self.habitat[y][x]]]
+
+
+    def get_possible_directions(self, organism: RandomOrganism) -> List[Direction]:
         possible_directions = []
         for direction in Direction:
             delta_x, delta_y = direction.value
@@ -96,7 +125,7 @@ class Simulation:
                 possible_directions.append(direction)
         return possible_directions
 
-    def is_valid_space(self, x: int, y: int, organism: Organism) -> bool:
+    def is_valid_space(self, x: int, y: int, organism: RandomOrganism) -> bool:
         if not 0 <= x < self.habitat_width or not 0 <= y < self.habitat_width:
             return False
         for entity in self.habitat[y][x]:
@@ -107,8 +136,12 @@ class Simulation:
     def get_empty_habitat(self) -> List[List[List]]:
         return [[[] for _ in range(self.habitat_width)] for _ in range(self.habitat_width)]
 
-    def get_organism(self, x: int, y: int) -> Organism:
-        return Organism(x, y)
+    def get_organism(self, x: int, y: int) -> RandomOrganism:
+        chosen_type = choice(self.organism_types)
+        return chosen_type(x, y)
+
+    def is_organism(self, entity: Entity) -> bool:
+        return any([isinstance(entity, o_type) for o_type in self.organism_types])
 
     def get_food(self, x: int, y: int) -> Food:
         return Food(x, y)
@@ -117,7 +150,7 @@ class Simulation:
         self.spawn_entities(spawn_probability, self.get_food)
 
     def spawn_organisms(self) -> None:
-        self.spawn_entities(0.01, self.get_organism)
+        self.spawn_entities(0.005, self.get_organism)
 
     def spawn_entity(self, entity: Entity, x: int, y: int) -> None:
         self.habitat[y][x].append(entity)
