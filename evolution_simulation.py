@@ -89,13 +89,14 @@ class EvolutionSimulation:
                         self.kill_entity(entity, x, y)
 
     def move_organism(self, organism: EvolvingOrganism, direction: Direction) -> None:
-        if direction is not None:
-            organism.food_count -= constants.MOVE_COST
-            self.habitat[organism.y][organism.x].remove(organism)
-            delta_x, delta_y = direction.value
-            organism.x += delta_x
-            organism.y += delta_y
-            self.habitat[organism.y][organism.x].append(organism)
+        organism.food_count -= constants.MOVE_COST
+        if organism.food_count <= 0:
+            return
+        self.habitat[organism.y][organism.x].remove(organism)
+        delta_x, delta_y = direction.value
+        organism.x += delta_x
+        organism.y += delta_y
+        self.habitat[organism.y][organism.x].append(organism)
 
     def move_organisms(self) -> None:
         # shuffle organisms, so first organisms don't always have an advantage of getting a desirable spot
