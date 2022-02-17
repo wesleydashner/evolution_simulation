@@ -31,7 +31,7 @@ class SightOrganism(Entity):
         if best_direction is not None:
             self.food_count -= constants.MOVE_COST
             return best_direction
-        self.food_count -= constants.STILL_COST
+        self.food_count -= constants.COST_TO_LIVE
         return None
 
     def collide(self, other: Entity) -> bool:

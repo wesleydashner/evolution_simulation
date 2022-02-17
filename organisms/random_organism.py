@@ -18,7 +18,7 @@ class RandomOrganism(Entity):
 
     def get_move(self, possible_directions: List[Direction], sight: Dict[Direction, list]) -> Optional[Direction]:
         if possible_directions == [] or random() < self.get_no_move_probability():
-            self.food_count -= constants.STILL_COST
+            self.food_count -= constants.COST_TO_LIVE
             return None
         self.food_count -= constants.MOVE_COST
         return choice(possible_directions)

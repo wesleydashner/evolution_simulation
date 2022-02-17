@@ -7,6 +7,7 @@ from organisms.evolving_organism import EvolvingOrganism
 from direction import Direction
 from food import Food
 from entity import Entity
+import constants
 
 
 class EvolutionSimulation:
@@ -25,9 +26,18 @@ class EvolutionSimulation:
             self.move_organisms()
             self.do_collisions()
             self.check_if_present()
-            self.spawn_food(0.0005)
+            self.spawn_food(0.001)
             self.do_reproductions()
-            # self.print_organism_counts()
+            total_speed = 0
+            total_sight = 0
+            total_organisms = self.get_entity_type_count(EvolvingOrganism)
+            for entity in self.entities:
+                if isinstance(entity, EvolvingOrganism):
+                    total_speed += entity.speed
+                    total_sight += entity.sight
+            print(f'AVERAGE SPEED: {total_speed / total_organisms}')
+            print(f'AVERAGE SIGHT: {total_sight / total_organisms}')
+            print()
 
     def print_organism_counts(self):
         for o_type in self.organism_types:
@@ -80,6 +90,7 @@ class EvolutionSimulation:
 
     def move_organism(self, organism: EvolvingOrganism, direction: Direction) -> None:
         if direction is not None:
+            organism.food_count -= constants.MOVE_COST
             self.habitat[organism.y][organism.x].remove(organism)
             delta_x, delta_y = direction.value
             organism.x += delta_x
@@ -91,8 +102,15 @@ class EvolutionSimulation:
         shuffle(self.entities)
         for entity in self.entities:
             if self.is_organism(entity):
-                move = entity.get_move(self.get_possible_directions(entity), self.get_sight(entity))
-                self.move_organism(entity, move)
+                moves = entity.get_moves(self.get_sight(entity))
+                for move in moves:
+                    delta_x, delta_y = move.value
+                    new_x = entity.x + delta_x
+                    new_y = entity.y + delta_y
+                    if self.is_valid_space(new_x, new_y, entity):
+                        self.move_organism(entity, move)
+                    else:
+                        break
 
     def get_sight(self, entity: Entity) -> Dict[Direction, list]:
         return_dict = {}
