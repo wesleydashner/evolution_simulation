@@ -1,14 +1,14 @@
 from typing import Tuple, Optional, List, Dict
 from random import random, choice
 
-from food import Food
 from direction import Direction
 from entity import Entity
 import constants
 
 
 class EvolvingOrganism(Entity):
-    def __init__(self, x: int, y: int, sight: int = 1, speed: int = 1, color: Tuple[int, int, int] = (127, 127, 127)) -> None:
+    def __init__(self, x: int, y: int, sight: int = 1, speed: int = 1,
+                 color: Tuple[int, int, int] = (127, 127, 127)) -> None:
         super().__init__(x, y, constants.ORGANISM_ID, color)
         self.food_count: float = constants.START_FOOD
         self.age = 0
@@ -24,20 +24,36 @@ class EvolvingOrganism(Entity):
         self.food_count -= constants.COST_TO_LIVE * self.sight
         if random() < self.get_no_move_probability():
             return []
-        best_direction = None
-        shortest_distance = float('inf')
-        for direction, data in sight.items():
-            distance = data[0]
-            e_types = data[1]
-            if distance <= self.sight \
-                    and e_types is not None \
-                    and Food in e_types \
-                    and distance < shortest_distance:
-                shortest_distance = distance
-                best_direction = direction
+        best_direction, best_score, shortest_distance = self.__get_best_direction_and_score(sight)
         if best_direction is not None:
             return [best_direction] * min(self.speed, shortest_distance)
         return []
+
+    def __get_best_direction_and_score(self, sight: Dict[Direction, list]) -> Tuple[Direction, int, int]:
+        best_direction = None
+        best_score = 0
+        shortest_distance = float('inf')
+        for direction, data in sight.items():
+            distance = data[0]
+            color = data[1]
+            score = self.__get_score(distance, color)
+            if distance <= self.sight and score > best_score:
+                best_score = score
+                best_direction = direction
+            if distance < shortest_distance:
+                shortest_distance = distance
+        return best_direction, best_score, shortest_distance
+
+    def __get_score(self, distance: int, color: Tuple[int, int, int]) -> float:
+        if color is None:
+            return False
+        red = color[0]
+        green = color[1]
+        blue = color[2]
+        color_score = ((green - red + 255) / (255 * 2) + (green - blue + 255) / (255 * 2)) / 2
+        distance_score = ((distance - 1) / (self.sight - 1 if self.sight > 1 else 1) * -1) + 1
+        score = color_score + distance_score
+        return score
 
     def collide(self, other: Entity) -> bool:
         if other.mask_id == constants.FOOD_ID:

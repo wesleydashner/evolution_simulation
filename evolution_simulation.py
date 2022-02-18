@@ -30,13 +30,22 @@ class EvolutionSimulation:
             self.do_reproductions()
             total_speed = 0
             total_sight = 0
+            total_red = 0
+            total_green = 0
+            total_blue = 0
             total_organisms = self.get_entity_type_count(EvolvingOrganism)
             for entity in self.entities:
                 if isinstance(entity, EvolvingOrganism):
                     total_speed += entity.speed
                     total_sight += entity.sight
+                    total_red += entity.color[0]
+                    total_green += entity.color[1]
+                    total_blue += entity.color[2]
             print(f'AVERAGE SPEED: {total_speed / total_organisms}')
             print(f'AVERAGE SIGHT: {total_sight / total_organisms}')
+            print(f'AVERAGE RED: {total_red / total_organisms}')
+            print(f'AVERAGE GREEN: {total_green / total_organisms}')
+            print(f'AVERAGE BLUE: {total_blue / total_organisms}')
             print()
 
     def print_organism_counts(self):
@@ -131,8 +140,7 @@ class EvolutionSimulation:
             if not 0 <= x < self.habitat_width or not 0 <= y < self.habitat_width:
                 return [count, None]
             if self.habitat[y][x] != []:
-                return [count, [type(entity) for entity in self.habitat[y][x]]]
-
+                return [count, self.get_visible_entity(x, y).color]
 
     def get_possible_directions(self, organism: EvolvingOrganism) -> List[Direction]:
         possible_directions = []
@@ -194,10 +202,13 @@ class EvolutionSimulation:
         ratio = total_spaces / spaces_available
         return min(spawn_probability * ratio, 1)
 
+    def get_visible_entity(self, x: int, y: int) -> Entity:
+        return max(self.habitat[y][x], key=lambda e: e.mask_id)
+
     def get_board_for_renderer(self, default_color: Tuple[int, int, int] = (0, 0, 0)) -> List[List[Tuple[int, int, int]]]:
         board = [[default_color for _ in range(self.habitat_width)] for _ in range(self.habitat_width)]
         for y in range(self.habitat_width):
             for x in range(self.habitat_width):
                 if self.habitat[y][x] != []:
-                    board[y][x] = max(self.habitat[y][x], key=lambda e: e.mask_id).color
+                    board[y][x] = self.get_visible_entity(x, y).color
         return board
