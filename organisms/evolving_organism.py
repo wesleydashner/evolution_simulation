@@ -1,5 +1,5 @@
 from typing import Tuple, Optional, List, Dict
-from random import random, choice
+from random import random, choice, shuffle
 from math import sqrt
 
 from direction import Direction
@@ -30,10 +30,10 @@ class EvolvingOrganism(Entity):
         return []
 
     def __get_best_direction_and_score(self, sight: Dict[Direction, list]) -> Tuple[Direction, int, int]:
-        # TODO: what happens when there is no entity in a direction?
         best_direction = None
         best_score = 0
         shortest_distance = float('inf')
+        # TODO: make it so first direction in sight.items() doesn't always win score ties
         for direction, data in sight.items():
             distance = data[0]
             color = data[1]
@@ -47,7 +47,7 @@ class EvolvingOrganism(Entity):
 
     def __get_score(self, distance: int, color: Tuple[int, int, int]) -> float:
         if color is None:
-            return False
+            return 0
         red1, green1, blue1 = color
         red2, green2, blue2 = constants.GREEN
         color_distance = sqrt((red1 - red2) ** 2 + (green1 - green2) ** 2 + (blue1 - blue2) ** 2)

@@ -12,6 +12,7 @@ import constants
 
 class EvolutionSimulation:
     def __init__(self) -> None:
+        # TODO: make it so I don't have to change two numbers here to change habitat width
         self.habitat_width: int = 200
         self.organism_types: List[type] = [EvolvingOrganism]
         self.entities: List[Entity] = []
