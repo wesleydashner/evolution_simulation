@@ -5,7 +5,7 @@ FOOD_ID = 0
 # Colors
 RED = (200, 0, 0)
 BLUE = (0, 0, 200)
-GREEN = (0, 200, 0)
+GREEN = (0, 255, 0)
 PINK = (200, 0, 200)
 
 # Environment Constants

@@ -1,5 +1,6 @@
 from typing import Tuple, Optional, List, Dict
 from random import random, choice
+from math import sqrt
 
 from direction import Direction
 from entity import Entity
@@ -20,7 +21,6 @@ class EvolvingOrganism(Entity):
         return self.age / self.max_age
 
     def get_moves(self, sight: Dict[Direction, list]) -> List[Direction]:
-        # TODO: change sight to color of entity with highest mask id and then use some algorithm to determine which direction is most desirable based on how similar color is to food and distance
         self.food_count -= constants.COST_TO_LIVE * self.sight
         if random() < self.get_no_move_probability():
             return []
@@ -30,6 +30,7 @@ class EvolvingOrganism(Entity):
         return []
 
     def __get_best_direction_and_score(self, sight: Dict[Direction, list]) -> Tuple[Direction, int, int]:
+        # TODO: what happens when there is no entity in a direction?
         best_direction = None
         best_score = 0
         shortest_distance = float('inf')
@@ -47,11 +48,14 @@ class EvolvingOrganism(Entity):
     def __get_score(self, distance: int, color: Tuple[int, int, int]) -> float:
         if color is None:
             return False
-        red = color[0]
-        green = color[1]
-        blue = color[2]
-        color_score = ((green - red + 255) / (255 * 2) + (green - blue + 255) / (255 * 2)) / 2
-        distance_score = ((distance - 1) / (self.sight - 1 if self.sight > 1 else 1) * -1) + 1
+        red1, green1, blue1 = color
+        red2, green2, blue2 = constants.GREEN
+        color_distance = sqrt((red1 - red2) ** 2 + (green1 - green2) ** 2 + (blue1 - blue2) ** 2)
+        color_score = (color_distance / sqrt((255 ** 2) * 3)) * -1 + 1
+        if distance > self.sight:
+            distance_score = 0
+        else:
+            distance_score = ((distance - 1) / (self.sight - 1 if self.sight > 1 else 1) * -1) + 1
         score = color_score + distance_score
         return score
 
