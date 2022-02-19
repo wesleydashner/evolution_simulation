@@ -33,8 +33,9 @@ class EvolvingOrganism(Entity):
         best_direction = None
         best_score = 0
         shortest_distance = float('inf')
-        # TODO: make it so first direction in sight.items() doesn't always win score ties
-        for direction, data in sight.items():
+        items = list(sight.items())
+        shuffle(items)
+        for direction, data in items:
             distance = data[0]
             color = data[1]
             score = self.__get_score(distance, color)

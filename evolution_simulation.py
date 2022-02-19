@@ -12,12 +12,11 @@ import constants
 
 class EvolutionSimulation:
     def __init__(self) -> None:
-        # TODO: make it so I don't have to change two numbers here to change habitat width
-        self.habitat_width: int = 200
+        self.habitat_width: int = 100
         self.organism_types: List[type] = [EvolvingOrganism]
         self.entities: List[Entity] = []
         self.habitat: List[List[List[Entity]]] = self.get_empty_habitat()
-        self.renderer: Renderer = Renderer(6, self.habitat_width)
+        self.renderer: Renderer = Renderer(9, self.habitat_width)
         self.spawn_organisms()
         self.spawn_food()
 
