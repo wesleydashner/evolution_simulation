@@ -16,48 +16,54 @@ class EvolutionSimulation:
         self.organism_types: List[type] = [EvolvingOrganism]
         self.entities: List[Entity] = []
         self.habitat: List[List[List[Entity]]] = self.get_empty_habitat()
-        self.renderer: Renderer = Renderer(4, self.habitat_width)
+        self.renderer: Renderer = Renderer(6, self.habitat_width)
         self.spawn_organisms()
         self.spawn_food()
 
     def run(self) -> None:
         while True:
-            self.renderer.render(self.get_board_for_renderer())
-            self.move_organisms()
-            self.do_collisions()
-            self.check_if_present()
-            self.spawn_food(0.005)
-            self.do_reproductions()
-            total_speed = 0
-            total_sight = 0
-            total_red = 0
-            total_green = 0
-            total_blue = 0
-            total_size = 0
-            total_aggressive = 0
-            total_non_aggressive = 0
-            total_organisms = self.get_entity_type_count(EvolvingOrganism)
-            for entity in self.entities:
-                if isinstance(entity, EvolvingOrganism):
-                    total_speed += entity.speed
-                    total_sight += entity.sight
-                    total_red += entity.color[0]
-                    total_green += entity.color[1]
-                    total_blue += entity.color[2]
-                    total_size += entity.size
-                    if entity.is_aggressive:
-                        total_aggressive += 1
-                    else:
-                        total_non_aggressive += 1
-            print(f'AVERAGE SPEED: {total_speed / total_organisms}')
-            print(f'AVERAGE SIGHT: {total_sight / total_organisms}')
-            print(f'AVERAGE RED: {total_red / total_organisms}')
-            print(f'AVERAGE GREEN: {total_green / total_organisms}')
-            print(f'AVERAGE BLUE: {total_blue / total_organisms}')
-            print(f'AVERAGE SIZE: {total_size / total_organisms}')
-            print(f'TOTAL AGGRESSIVE: {total_aggressive}')
-            print(f'TOTAL NON AGGRESSIVE: {total_non_aggressive}')
-            print()
+            self.do_one_turn()
+
+    def do_one_turn(self):
+        self.renderer.render(self.get_board_for_renderer())
+        self.move_organisms()
+        self.do_collisions()
+        self.check_if_present()
+        self.spawn_food(0.001)
+        self.do_reproductions()
+        self.print_report()
+
+    def print_report(self):
+        total_speed = 0
+        total_sight = 0
+        total_red = 0
+        total_green = 0
+        total_blue = 0
+        total_size = 0
+        total_aggressive = 0
+        total_non_aggressive = 0
+        total_organisms = self.get_entity_type_count(EvolvingOrganism)
+        for entity in self.entities:
+            if isinstance(entity, EvolvingOrganism):
+                total_speed += entity.speed
+                total_sight += entity.sight
+                total_red += entity.color[0]
+                total_green += entity.color[1]
+                total_blue += entity.color[2]
+                total_size += entity.size
+                if entity.is_aggressive:
+                    total_aggressive += 1
+                else:
+                    total_non_aggressive += 1
+        print(f'AVERAGE SPEED: {total_speed / total_organisms}')
+        print(f'AVERAGE SIGHT: {total_sight / total_organisms}')
+        print(f'AVERAGE RED: {total_red / total_organisms}')
+        print(f'AVERAGE GREEN: {total_green / total_organisms}')
+        print(f'AVERAGE BLUE: {total_blue / total_organisms}')
+        print(f'AVERAGE SIZE: {total_size / total_organisms}')
+        print(f'TOTAL AGGRESSIVE: {total_aggressive}')
+        print(f'TOTAL NON AGGRESSIVE: {total_non_aggressive}')
+        print()
 
     def print_organism_counts(self):
         for o_type in self.organism_types:
