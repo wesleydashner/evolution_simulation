@@ -12,11 +12,11 @@ import constants
 
 class EvolutionSimulation:
     def __init__(self) -> None:
-        self.habitat_width: int = 100
+        self.habitat_width: int = 200
         self.organism_types: List[type] = [EvolvingOrganism]
         self.entities: List[Entity] = []
         self.habitat: List[List[List[Entity]]] = self.get_empty_habitat()
-        self.renderer: Renderer = Renderer(9, self.habitat_width)
+        self.renderer: Renderer = Renderer(4, self.habitat_width)
         self.spawn_organisms()
         self.spawn_food()
 
@@ -26,13 +26,16 @@ class EvolutionSimulation:
             self.move_organisms()
             self.do_collisions()
             self.check_if_present()
-            self.spawn_food(0.001)
+            self.spawn_food(0.005)
             self.do_reproductions()
             total_speed = 0
             total_sight = 0
             total_red = 0
             total_green = 0
             total_blue = 0
+            total_size = 0
+            total_aggressive = 0
+            total_non_aggressive = 0
             total_organisms = self.get_entity_type_count(EvolvingOrganism)
             for entity in self.entities:
                 if isinstance(entity, EvolvingOrganism):
@@ -41,11 +44,19 @@ class EvolutionSimulation:
                     total_red += entity.color[0]
                     total_green += entity.color[1]
                     total_blue += entity.color[2]
+                    total_size += entity.size
+                    if entity.is_aggressive:
+                        total_aggressive += 1
+                    else:
+                        total_non_aggressive += 1
             print(f'AVERAGE SPEED: {total_speed / total_organisms}')
             print(f'AVERAGE SIGHT: {total_sight / total_organisms}')
             print(f'AVERAGE RED: {total_red / total_organisms}')
             print(f'AVERAGE GREEN: {total_green / total_organisms}')
             print(f'AVERAGE BLUE: {total_blue / total_organisms}')
+            print(f'AVERAGE SIZE: {total_size / total_organisms}')
+            print(f'TOTAL AGGRESSIVE: {total_aggressive}')
+            print(f'TOTAL NON AGGRESSIVE: {total_non_aggressive}')
             print()
 
     def print_organism_counts(self):
@@ -76,7 +87,9 @@ class EvolutionSimulation:
             for x in range(self.habitat_width):
                 if len(self.habitat[y][x]) > 1:
                     for pair in combinations(self.habitat[y][x], 2):
-                        self.do_collision(pair[0], pair[1], x, y)
+                        # make sure that one of the entities here didn't die in last collision
+                        if pair[0] in self.habitat[y][x] and pair[1] in self.habitat[y][x]:
+                            self.do_collision(pair[0], pair[1], x, y)
 
     def do_reproductions(self):
         for entity in self.entities:
@@ -98,7 +111,7 @@ class EvolutionSimulation:
                         self.kill_entity(entity, x, y)
 
     def move_organism(self, organism: EvolvingOrganism, direction: Direction) -> None:
-        organism.food_count -= constants.MOVE_COST
+        organism.food_count -= constants.MOVE_COST * organism.size
         if organism.food_count <= 0:
             return
         self.habitat[organism.y][organism.x].remove(organism)
@@ -153,9 +166,9 @@ class EvolutionSimulation:
     def is_valid_space(self, x: int, y: int, organism: EvolvingOrganism) -> bool:
         if not 0 <= x < self.habitat_width or not 0 <= y < self.habitat_width:
             return False
-        for entity in self.habitat[y][x]:
-            if entity.mask_id == organism.mask_id:
-                return False
+        # for entity in self.habitat[y][x]:
+        #     if entity.mask_id == organism.mask_id:
+        #         return False
         return True
 
     def get_empty_habitat(self) -> List[List[List]]:
